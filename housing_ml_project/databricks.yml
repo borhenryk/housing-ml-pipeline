@@ -1,0 +1,46 @@
+bundle:
+  name: housing_ml_pipeline
+
+variables:
+  catalog:
+    description: Unity Catalog name
+    default: dbdemos_henryk
+  schema:
+    description: Schema name for the project
+    default: boston_housing_ml
+  serving_endpoint_name:
+    description: Name of the model serving endpoint
+    default: housing-price-predictor
+
+workspace:
+  root_path: /Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: dbdemos_henryk
+      schema: boston_housing_ml
+    workspace:
+      host: https://dbc-cc0aa83c-12fd.cloud.databricks.com
+
+  staging:
+    mode: development
+    variables:
+      catalog: dbdemos_henryk
+      schema: boston_housing_ml_staging
+    workspace:
+      host: https://dbc-cc0aa83c-12fd.cloud.databricks.com
+
+  prod:
+    mode: production
+    variables:
+      catalog: dbdemos_henryk
+      schema: boston_housing_ml_prod
+    workspace:
+      host: https://dbc-cc0aa83c-12fd.cloud.databricks.com
+

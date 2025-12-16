@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>California Housing Dataset - EDA Report</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #a371f7;
+            --border-color: #30363d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse at center, rgba(88, 166, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+        
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            font-weight: 400;
+        }
+        
+        .meta-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-badge {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .meta-badge .icon {
+            font-size: 1.5rem;
+        }
+        
+        .meta-badge .label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .meta-badge .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+        
+        section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        h2 .section-icon {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stat-card h4 {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-blue);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-item .label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .stat-item .value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: var(--bg-card);
+            color: var(--accent-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        
+        th:first-child, td:first-child {
+            text-align: left;
+        }
+        
+        tr:hover td {
+            background: rgba(88, 166, 255, 0.05);
+        }
+        
+        .correlation-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        
+        .corr-strong-pos { background: rgba(63, 185, 80, 0.2); color: var(--accent-green); }
+        .corr-moderate-pos { background: rgba(63, 185, 80, 0.1); color: #7ee787; }
+        .corr-weak { background: rgba(139, 148, 158, 0.1); color: var(--text-secondary); }
+        .corr-moderate-neg { background: rgba(248, 81, 73, 0.1); color: #ffa198; }
+        .corr-strong-neg { background: rgba(248, 81, 73, 0.2); color: var(--accent-red); }
+        
+        .insight-box {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(163, 113, 247, 0.1));
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .insight-box h4 {
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .insight-list {
+            list-style: none;
+        }
+        
+        .insight-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            border-bottom: 1px solid rgba(88, 166, 255, 0.2);
+        }
+        
+        .insight-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .insight-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+        
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .recommendation-card {
+            background: linear-gradient(135deg, rgba(63, 185, 80, 0.1), rgba(210, 153, 34, 0.1));
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+            padding: 25px;
+        }
+        
+        .recommendation-card h4 {
+            color: var(--accent-green);
+            margin-bottom: 15px;
+        }
+        
+        .outlier-bar {
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .outlier-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-orange), var(--accent-red));
+            border-radius: 4px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 60px;
+        }
+        
+        footer p {
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .meta-info { gap: 15px; }
+            .stat-values { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Housing Data Analysis</h1>
+            <p class="subtitle">California Housing Dataset - Exploratory Data Analysis Report</p>
+            
+            <div class="meta-info">
+                <div class="meta-badge">
+                    <span class="icon">📦</span>
+                    <div>
+                        <div class="label">Total Samples</div>
+                        <div class="value">20,640</div>
+                    </div>
+                </div>
+                <div class="meta-badge">
+                    <span class="icon">🔢</span>
+                    <div>
+                        <div class="label">Features</div>
+                        <div class="value">8</div>
+                    </div>
+                </div>
+                <div class="meta-badge">
+                    <span class="icon">🎯</span>
+                    <div>
+                        <div class="label">Target</div>
+                        <div class="value">median_house_value</div>
+                    </div>
+                </div>
+                <div class="meta-badge">
+                    <span class="icon">✅</span>
+                    <div>
+                        <div class="label">Missing Values</div>
+                        <div class="value">0</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section id="descriptive-stats">
+            <h2><span class="section-icon">📈</span> Descriptive Statistics</h2>
+            <div class="card" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Count</th>
+                            <th>Mean</th>
+                            <th>Std</th>
+                            <th>Min</th>
+                            <th>25%</th>
+                            <th>50%</th>
+                            <th>75%</th>
+                            <th>Max</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>median_income</td>
+                            <td>20,640</td>
+                            <td>3.87</td>
+                            <td>1.90</td>
+                            <td>0.50</td>
+                            <td>2.56</td>
+                            <td>3.53</td>
+                            <td>4.74</td>
+                            <td>15.00</td>
+                        </tr>
+                        <tr>
+                            <td>house_age</td>
+                            <td>20,640</td>
+                            <td>28.64</td>
+                            <td>12.59</td>
+                            <td>1.00</td>
+                            <td>18.00</td>
+                            <td>29.00</td>
+                            <td>37.00</td>
+                            <td>52.00</td>
+                        </tr>
+                        <tr>
+                            <td>avg_rooms</td>
+                            <td>20,640</td>
+                            <td>5.43</td>
+                            <td>2.47</td>
+                            <td>0.85</td>
+                            <td>4.44</td>
+                            <td>5.23</td>
+                            <td>6.05</td>
+                            <td>141.91</td>
+                        </tr>
+                        <tr>
+                            <td>avg_bedrooms</td>
+                            <td>20,640</td>
+                            <td>1.10</td>
+                            <td>0.47</td>
+                            <td>0.33</td>
+                            <td>1.01</td>
+                            <td>1.05</td>
+                            <td>1.10</td>
+                            <td>34.07</td>
+                        </tr>
+                        <tr>
+                            <td>population</td>
+                            <td>20,640</td>
+                            <td>1,425.48</td>
+                            <td>1,132.46</td>
+                            <td>3.00</td>
+                            <td>787.00</td>
+                            <td>1,166.00</td>
+                            <td>1,725.00</td>
+                            <td>35,682.00</td>
+                        </tr>
+                        <tr>
+                            <td>avg_occupancy</td>
+                            <td>20,640</td>
+                            <td>3.07</td>
+                            <td>10.39</td>
+                            <td>0.69</td>
+                            <td>2.43</td>
+                            <td>2.82</td>
+                            <td>3.28</td>
+                            <td>1,243.33</td>
+                        </tr>
+                        <tr>
+                            <td>latitude</td>
+                            <td>20,640</td>
+                            <td>35.63</td>
+                            <td>2.14</td>
+                            <td>32.54</td>
+                            <td>33.93</td>
+                            <td>34.26</td>
+                            <td>37.71</td>
+                            <td>41.95</td>
+                        </tr>
+                        <tr>
+                            <td>longitude</td>
+                            <td>20,640</td>
+                            <td>-119.57</td>
+                            <td>2.00</td>
+                            <td>-124.35</td>
+                            <td>-121.80</td>
+                            <td>-118.49</td>
+                            <td>-118.01</td>
+                            <td>-114.31</td>
+                        </tr>
+                        <tr style="background: rgba(88, 166, 255, 0.1);">
+                            <td><strong>median_house_value</strong></td>
+                            <td>20,640</td>
+                            <td>2.07</td>
+                            <td>1.15</td>
+                            <td>0.15</td>
+                            <td>1.20</td>
+                            <td>1.80</td>
+                            <td>2.65</td>
+                            <td>5.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="correlations">
+            <h2><span class="section-icon">🔗</span> Feature Correlations with Target</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Strong Positive Correlation</h4>
+                    <div class="stat-item">
+                        <span class="label">median_income</span>
+                        <span class="correlation-badge corr-strong-pos">+0.688</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h4>Moderate Correlations</h4>
+                    <div class="stat-item">
+                        <span class="label">avg_rooms</span>
+                        <span class="correlation-badge corr-moderate-pos">+0.152</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">house_age</span>
+                        <span class="correlation-badge corr-moderate-pos">+0.106</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">latitude</span>
+                        <span class="correlation-badge corr-moderate-neg">-0.144</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h4>Weak Correlations</h4>
+                    <div class="stat-item">
+                        <span class="label">avg_bedrooms</span>
+                        <span class="correlation-badge corr-weak">-0.047</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">longitude</span>
+                        <span class="correlation-badge corr-weak">-0.046</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">population</span>
+                        <span class="correlation-badge corr-weak">-0.025</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">avg_occupancy</span>
+                        <span class="correlation-badge corr-weak">-0.024</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="correlation-heatmap"></div>
+            </div>
+        </section>
+
+        <section id="distributions">
+            <h2><span class="section-icon">📊</span> Distribution Analysis</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>median_income</h4>
+                    <div class="stat-values">
+                        <div class="stat-item">
+                            <span class="label">Skewness</span>
+                            <span class="value">1.65</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Kurtosis</span>
+                            <span class="value">4.95</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--accent-orange); font-size: 0.85rem; margin-top: 10px;">⚠️ Right-skewed distribution</p>
+                </div>
+                <div class="stat-card">
+                    <h4>house_age</h4>
+                    <div class="stat-values">
+                        <div class="stat-item">
+                            <span class="label">Skewness</span>
+                            <span class="value">0.06</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Kurtosis</span>
+                            <span class="value">-0.80</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--accent-green); font-size: 0.85rem; margin-top: 10px;">✓ Nearly symmetric</p>
+                </div>
+                <div class="stat-card">
+                    <h4>avg_rooms</h4>
+                    <div class="stat-values">
+                        <div class="stat-item">
+                            <span class="label">Skewness</span>
+                            <span class="value">20.70</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Kurtosis</span>
+                            <span class="value">879.35</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--accent-red); font-size: 0.85rem; margin-top: 10px;">🚨 Extreme outliers present</p>
+                </div>
+                <div class="stat-card">
+                    <h4>avg_occupancy</h4>
+                    <div class="stat-values">
+                        <div class="stat-item">
+                            <span class="label">Skewness</span>
+                            <span class="value">97.64</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Kurtosis</span>
+                            <span class="value">10,651</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--accent-red); font-size: 0.85rem; margin-top: 10px;">🚨 Extreme outliers present</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="outliers">
+            <h2><span class="section-icon">⚠️</span> Outlier Detection (IQR Method)</h2>
+            <div class="card">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>avg_bedrooms</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--accent-red);">1,424 (6.90%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 69%;"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>population</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--accent-orange);">1,196 (5.79%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 58%;"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>median_house_value</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--accent-orange);">1,071 (5.19%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 52%;"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>avg_occupancy</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--accent-orange);">711 (3.44%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 34%;"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>median_income</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--text-secondary);">681 (3.30%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 33%;"></div></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>avg_rooms</h4>
+                        <div class="stat-item">
+                            <span class="label">Outliers</span>
+                            <span class="value" style="color: var(--text-secondary);">511 (2.48%)</span>
+                        </div>
+                        <div class="outlier-bar"><div class="outlier-fill" style="width: 25%;"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="insights">
+            <h2><span class="section-icon">💡</span> Key Insights</h2>
+            <div class="insight-box">
+                <h4>📌 Important Findings</h4>
+                <ul class="insight-list">
+                    <li><strong>Strongest Predictor:</strong> median_income has the highest correlation (0.69) with house value - this is the most important feature for prediction</li>
+                    <li><strong>Location Matters:</strong> Latitude shows moderate negative correlation (-0.14), indicating houses in southern California tend to be more expensive</li>
+                    <li><strong>Room Size Impact:</strong> avg_rooms shows weak positive correlation (0.15) with house value</li>
+                    <li><strong>Significant Outliers:</strong> avg_rooms, avg_bedrooms, and avg_occupancy have extreme outliers that need handling</li>
+                    <li><strong>Skewed Distributions:</strong> Most features show right-skewed distributions, suggesting log transformation may help</li>
+                    <li><strong>Complete Dataset:</strong> No missing values - the dataset is ready for modeling</li>
+                    <li><strong>Target Range:</strong> Median house values range from $14,999 to $500,001 (values in $100k units)</li>
+                </ul>
+            </div>
+            
+            <div class="recommendation-card">
+                <h4>🎯 Modeling Recommendations</h4>
+                <ul class="insight-list">
+                    <li>Apply log transformation to highly skewed features (avg_rooms, avg_bedrooms, avg_occupancy, population)</li>
+                    <li>Consider robust scaling or outlier clipping for features with many outliers</li>
+                    <li>median_income should receive the highest feature importance weight</li>
+                    <li>Geographic features (latitude/longitude) may benefit from clustering or polynomial features</li>
+                    <li>Consider feature engineering: rooms per bedroom, population density</li>
+                    <li>Use cross-validation to ensure model generalization</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer>
+            <p>Generated for Boston Housing ML Project | Catalog: dbdemos_henryk.boston_housing_ml</p>
+            <p style="margin-top: 10px; color: var(--text-secondary);">Data Source: California Housing Dataset (sklearn) • 20,640 samples</p>
+        </footer>
+    </div>
+
+    <script>
+        // Correlation Heatmap
+        const features = ['median_income', 'house_age', 'avg_rooms', 'avg_bedrooms', 'population', 'avg_occupancy', 'latitude', 'longitude', 'median_house_value'];
+        
+        const correlationMatrix = [
+            [1.000, -0.119, 0.327, -0.062, 0.005, 0.019, -0.080, -0.015, 0.688],
+            [-0.119, 1.000, -0.153, -0.078, -0.296, 0.013, 0.011, -0.108, 0.106],
+            [0.327, -0.153, 1.000, 0.848, -0.072, -0.005, 0.106, -0.028, 0.152],
+            [-0.062, -0.078, 0.848, 1.000, -0.066, -0.006, 0.070, 0.013, -0.047],
+            [0.005, -0.296, -0.072, -0.066, 1.000, 0.070, -0.109, 0.100, -0.025],
+            [0.019, 0.013, -0.005, -0.006, 0.070, 1.000, 0.002, 0.002, -0.024],
+            [-0.080, 0.011, 0.106, 0.070, -0.109, 0.002, 1.000, -0.925, -0.144],
+            [-0.015, -0.108, -0.028, 0.013, 0.100, 0.002, -0.925, 1.000, -0.046],
+            [0.688, 0.106, 0.152, -0.047, -0.025, -0.024, -0.144, -0.046, 1.000]
+        ];
+
+        const heatmapData = [{
+            z: correlationMatrix,
+            x: features,
+            y: features,
+            type: 'heatmap',
+            colorscale: [
+                [0, '#f85149'],
+                [0.5, '#161b22'],
+                [1, '#3fb950']
+            ],
+            zmin: -1,
+            zmax: 1,
+            hoverongaps: false,
+            showscale: true,
+            colorbar: {
+                title: 'Correlation',
+                titleside: 'right',
+                tickfont: { color: '#f0f6fc' },
+                titlefont: { color: '#f0f6fc' }
+            }
+        }];
+
+        const heatmapLayout = {
+            title: {
+                text: 'Feature Correlation Matrix',
+                font: { color: '#f0f6fc', size: 18 }
+            },
+            paper_bgcolor: '#21262d',
+            plot_bgcolor: '#21262d',
+            font: { color: '#8b949e', size: 10 },
+            xaxis: {
+                tickangle: 45,
+                tickfont: { size: 9 }
+            },
+            yaxis: {
+                tickfont: { size: 9 }
+            },
+            margin: { l: 120, r: 80, t: 60, b: 120 }
+        };
+
+        Plotly.newPlot('correlation-heatmap', heatmapData, heatmapLayout, {responsive: true});
+    </script>
+</body>
+</html>
+
