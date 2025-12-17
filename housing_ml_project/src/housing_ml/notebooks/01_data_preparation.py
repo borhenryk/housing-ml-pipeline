@@ -7,19 +7,36 @@
 # COMMAND ----------
 
 # MAGIC %pip install scikit-learn --quiet
-# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
 # Get parameters
-dbutils.widgets.text("catalog", "dbdemos_henryk")
-dbutils.widgets.text("schema", "boston_housing_ml")
-
-catalog = dbutils.widgets.get("catalog")
-schema = dbutils.widgets.get("schema")
+try:
+    catalog = dbutils.widgets.get("catalog")
+    schema = dbutils.widgets.get("schema")
+except:
+    dbutils.widgets.text("catalog", "dbdemos_henryk")
+    dbutils.widgets.text("schema", "boston_housing_ml")
+    catalog = dbutils.widgets.get("catalog")
+    schema = dbutils.widgets.get("schema")
 
 print(f"Catalog: {catalog}")
 print(f"Schema: {schema}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Create Schema if Not Exists
+
+# COMMAND ----------
+
+# Create schema if it doesn't exist
+spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema}")
+print(f"Schema {catalog}.{schema} is ready")
 
 # COMMAND ----------
 
@@ -58,7 +75,7 @@ spark_df = spark.createDataFrame(df)
 table_name = f"{catalog}.{schema}.housing_data"
 spark_df.write.format("delta").mode("overwrite").saveAsTable(table_name)
 
-print(f"✅ Data saved to: {table_name}")
+print(f"Data saved to: {table_name}")
 print(f"   Total rows: {spark_df.count()}")
 
 # COMMAND ----------
@@ -72,5 +89,4 @@ display(spark.sql(f"SELECT * FROM {table_name} LIMIT 10"))
 stats = df.describe().to_dict()
 dbutils.jobs.taskValues.set(key="row_count", value=len(df))
 dbutils.jobs.taskValues.set(key="column_count", value=len(df.columns))
-print(f"✅ Data preparation complete!")
-
+print(f"Data preparation complete!")
