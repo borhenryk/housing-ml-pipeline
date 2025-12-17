@@ -7,16 +7,22 @@
 # COMMAND ----------
 
 # MAGIC %pip install optuna --quiet
-# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
 # Get parameters
-dbutils.widgets.text("catalog", "dbdemos_henryk")
-dbutils.widgets.text("schema", "boston_housing_ml")
-
-catalog = dbutils.widgets.get("catalog")
-schema = dbutils.widgets.get("schema")
+try:
+    catalog = dbutils.widgets.get("catalog")
+    schema = dbutils.widgets.get("schema")
+except:
+    dbutils.widgets.text("catalog", "dbdemos_henryk")
+    dbutils.widgets.text("schema", "boston_housing_ml")
+    catalog = dbutils.widgets.get("catalog")
+    schema = dbutils.widgets.get("schema")
 
 print(f"Catalog: {catalog}")
 print(f"Schema: {schema}")
@@ -66,7 +72,7 @@ print(f"Features: {feature_cols}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Hyperparameter Optimization with Optuna
+# MAGIC ## Hyperparameter Optimization with Optuna (11 trials)
 
 # COMMAND ----------
 
@@ -99,12 +105,12 @@ def objective(trial):
     scores = cross_val_score(model, X_train_scaled, y_train, cv=3, scoring='neg_mean_squared_error')
     return -scores.mean()
 
-# Run optimization
+# Run optimization with 11 trials
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 study = optuna.create_study(direction='minimize')
-study.optimize(objective, n_trials=20, show_progress_bar=True)
+study.optimize(objective, n_trials=11, show_progress_bar=True)
 
-print(f"\n✅ Best hyperparameters found:")
+print(f"\nBest hyperparameters found:")
 for param, value in study.best_params.items():
     print(f"   {param}: {value}")
 print(f"\n   Best CV MSE: {study.best_value:.4f}")
@@ -161,11 +167,11 @@ with mlflow.start_run(run_name="housing_price_model") as run:
     
     run_id = run.info.run_id
     
-    print(f"\n📊 Model Performance:")
+    print(f"\nModel Performance:")
     print(f"   RMSE: {rmse:.4f}")
     print(f"   MAE: {mae:.4f}")
-    print(f"   R²: {r2:.4f}")
-    print(f"\n✅ Model registered: {model_name}")
+    print(f"   R2: {r2:.4f}")
+    print(f"\nModel registered: {model_name}")
     print(f"   Run ID: {run_id}")
 
 # COMMAND ----------
@@ -185,5 +191,4 @@ dbutils.jobs.taskValues.set(key="run_id", value=run_id)
 dbutils.jobs.taskValues.set(key="model_name", value=model_name)
 dbutils.jobs.taskValues.set(key="test_r2", value=r2)
 
-print("✅ Model training complete!")
-
+print("Model training complete!")
