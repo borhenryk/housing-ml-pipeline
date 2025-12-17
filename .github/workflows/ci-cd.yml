@@ -75,7 +75,6 @@ jobs:
     name: Deploy to Dev
     runs-on: ubuntu-latest
     needs: [validate, lint]
-    if: github.event_name == 'workflow_dispatch'
     environment: development
     
     steps:
@@ -95,3 +94,13 @@ jobs:
           echo "Deploying to Dev environment..."
           /usr/local/bin/databricks bundle deploy -t dev
           echo "Deployment to Dev successful!"
+      
+      - name: Run Training Job
+        working-directory: housing_ml_project
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          echo "Starting training pipeline..."
+          /usr/local/bin/databricks bundle run housing_ml_training_job -t dev
+          echo "Training job started!"
